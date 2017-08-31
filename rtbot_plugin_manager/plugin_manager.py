@@ -46,7 +46,8 @@ class PluginManager:
         :param plugin_id:
         :return: Whether the plugin was unloaded (was loaded before and now no longer is)
         """
-        return False
+        del self._repository[plugin_id]
+        return True
 
     def fire_event(self, callee):
         for plugin_id, plugin in self._repository:
