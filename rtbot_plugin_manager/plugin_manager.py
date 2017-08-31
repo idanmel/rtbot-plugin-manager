@@ -1,4 +1,5 @@
-
+import re
+import imp
 
 class PluginLoadingError(Exception):
     pass
@@ -6,6 +7,8 @@ class PluginLoadingError(Exception):
 
 class PluginRepository(dict):
     pass
+
+find_class_name = re.compile(r'''class\s+([^(:]+)''')
 
 
 class PluginManager:
@@ -22,10 +25,17 @@ class PluginManager:
         return self._repository
 
     def load_plugin_from_string(self, code_module):
-        return 'new-plugin-id'
+        plugin_id = find_class_name.search(code_module)
+        my_module = imp.new_module('mymodule')
+        exec(code_module, my_module.__dict__)
+        self._repository[plugin_id] = my_module.SimplePlugin()
+        return plugin_id
+
 
     def load_plugin_from_file(self, filename):
-        return 'new-plugin-id'
+        with open(filename, 'r') as f:
+            plugin_code = f.read()
+        return self.load_plugin_from_string(plugin_code)
 
     def unload_plugin(self, plugin_id):
         """
