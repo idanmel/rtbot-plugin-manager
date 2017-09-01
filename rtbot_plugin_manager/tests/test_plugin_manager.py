@@ -245,7 +245,7 @@ def test_fire_plugin_events_async(pm):
 def test_load_syntactically_invalid_plugin(pm):
     with pytest.raises(PluginLoadingError) as exc:
         pm.load_plugin_from_string(PLUGIN_WITH_SYNTAX_ERROR)
-    assert isinstance(exc.cause, SyntaxError)   # TODO: I don't actually know how to correctly access the cause... do I have to write __cause__ here!? https://docs.python.org/3/reference/simple_stmts.html#raise
+    assert isinstance(exc.__cause__, SyntaxError)
 
     # make sure the plugin doesn't appear loaded
     assert 'PluginWithSyntaxError' not in pm.repository
@@ -255,7 +255,7 @@ def test_load_syntactically_invalid_plugin(pm):
 def test_load_plugin_with_error_during_initialization(pm):
     with pytest.raises(PluginLoadingError) as exc:
         pm.load_plugin_from_string(PLUGIN_WITH_CONSTRUCTOR_EXCEPTION)
-    assert isinstance(exc.cause, RuntimeError)   # TODO: I don't actually know how to correctly access the cause... do I have to write __cause__ here!? https://docs.python.org/3/reference/simple_stmts.html#raise
+    assert isinstance(exc.__cause__, RuntimeError)
 
     # make sure the plugin doesn't appear loaded
     assert 'SimplePlugin' not in pm.repository
