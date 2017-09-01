@@ -50,9 +50,9 @@ class PluginManager:
         return True
 
     def fire_event(self, callee):
-        for plugin_id, plugin in self._repository:
+        for plugin_id, plugin in self._repository.items():
             callee(plugin)
 
     async def fire_event_async(self, callee):
-        for plugin_id, plugin in self._repository:
+        for plugin_id, plugin in self._repository.items():
             await callee(plugin)
