@@ -46,13 +46,18 @@ class SimplePlugin:
 
 PLUGIN_WITH_CONSTRUCTOR_DESTRUCTOR = """
 import threading
-class SimplePlugin2:
+class SimplePlugin:
     def __init__(self):
         threadlocals = threading.local()
         threadlocals.constructor_called = True
     def __del__(self):   # DESIGN: the __del__ special method is problematic (https://docs.python.org/3.6/reference/datamodel.html#object.__del__), should we declare our own instead, e.g. on_destroy()
         threadlocals = threading.local()
         threadlocals.destructor_called = True
+"""
+
+
+ANOTHER_PLUGIN = """
+class AnotherPlugin: pass
 """
 
 
@@ -153,7 +158,7 @@ def test_plugins_have_unique_id(pm):
     assert pm.unload_plugin(first_id)
 
     # now load another plugin (not the same plugin with a different implementation)
-    second_id = pm.load_plugin_from_string(PLUGIN_WITH_CONSTRUCTOR_DESTRUCTOR)
+    second_id = pm.load_plugin_from_string(ANOTHER_PLUGIN)
     assert second_id
 
     # assert that these two plugins were assigned unique IDs
