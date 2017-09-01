@@ -25,10 +25,10 @@ class PluginManager:
         return self._repository
 
     def load_plugin_from_string(self, code_module):
-        plugin_id = find_class_name.search(code_module)
+        plugin_id = find_class_name.search(code_module).group(1)
         my_module = imp.new_module('mymodule')
         exec(code_module, my_module.__dict__)
-        self._repository[plugin_id] = my_module.SimplePlugin()
+        self._repository[plugin_id] = my_module.__dict__[plugin_id]()
         return plugin_id
 
 
