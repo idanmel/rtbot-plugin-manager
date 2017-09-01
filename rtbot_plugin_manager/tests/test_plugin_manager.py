@@ -45,7 +45,8 @@ class SimplePlugin:
 
 
 PLUGIN_WITH_CONSTRUCTOR_DESTRUCTOR = """
-class SimplePlugin:
+import threading
+class SimplePlugin2:
     def __init__(self):
         threadlocals = threading.local()
         threadlocals.constructor_called = True
@@ -149,7 +150,7 @@ def test_plugins_have_unique_id(pm):
     # load and unload one plugin
     first_id = pm.load_plugin_from_string(PLUGIN)
     assert first_id
-    assert pm.unload_plugin_from_string(first_id)
+    assert pm.unload_plugin(first_id)
 
     # now load another plugin (not the same plugin with a different implementation)
     second_id = pm.load_plugin_from_string(PLUGIN_WITH_CONSTRUCTOR_DESTRUCTOR)
@@ -163,7 +164,7 @@ def test_plugin_id_is_independent_from_implementation(pm):
     # load and unload a plugin
     first_id = pm.load_plugin_from_string(PLUGIN)
     assert first_id
-    assert pm.unload_plugin_from_string(first_id)
+    assert pm.unload_plugin(first_id)
 
     # now load the same plugin with a different implementation
     second_id = pm.load_plugin_from_string(PLUGIN_DIFFERENT_IMPLEMENTATION)
@@ -186,6 +187,7 @@ def test_plugin_can_be_reloaded(pm):
 
     # now load a plugin with the same identification, and expect this to trigger a reload
     assert pm.load_plugin_from_string(PLUGIN_DIFFERENT_IMPLEMENTATION)
+    plugin = _assert_single_plugin(pm)
     assert plugin.foo() == 'different implementation'
 
 
