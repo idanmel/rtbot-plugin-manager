@@ -1,10 +1,13 @@
+import os
+import sys
+import tempfile
 import threading
 from unittest.mock import MagicMock
 
 import pytest
 
 from rtbot_plugin_manager.plugin_manager import PluginManager, PluginLoadingError
-from rtbot_plugin_manager.tests.utils import OpenableNamedTemporaryFile
+from rtbot_plugin_manager.tests.utils import OpenableNamedTemporaryFile, SysPath
 
 
 class PluginBase(MagicMock):
@@ -53,6 +56,12 @@ class SimplePlugin:
     def __del__(self):   # DESIGN: the __del__ special method is problematic (https://docs.python.org/3.6/reference/datamodel.html#object.__del__), should we declare our own instead, e.g. on_destroy()
         threadlocals = threading.local()
         threadlocals.destructor_called = True
+"""
+
+
+PLUGIN_WITH_REFERENCE = """
+import temprefmodule
+class SimplePlugin: pass
 """
 
 
@@ -149,6 +158,31 @@ def test_load_and_unload_plugin(pm):
 
     # check that the plugin repository is empty
     assert len(pm.repository) == 0
+
+
+def test_load_and_unload_plugin_with_references(pm):
+    # create a temp directory, which we'll pretend is an import path later
+    with tempfile.TemporaryDirectory() as d:
+        # create a helper module, which the plugin will load into the interpreter for us
+        with open(os.path.join(d, 'temprefmodule.py'), 'w') as f:
+            f.write('print("temprefmodule loaded")')
+
+        # temporarily add our temporary 'library' directory to the PATH
+        with SysPath(d):
+            # load and unload plugin
+            plugin_id = pm.load_plugin_from_string(PLUGIN_WITH_REFERENCE)
+            assert pm.unload_plugin(plugin_id)
+        # at this point, we're expecting the plugin to be unloaded, *including* its references!
+
+    # first check that the module is no longer in sys.modules (that's the first step, but doesn't conclude that it
+    # isn't loaded anymore)
+    assert 'temprefmodule' not in sys.modules
+
+    # Here comes the real test: now try to load the module directly: if it's still known to the interpreter ('cached'),
+    # it will just load it anyway. If not, it will try to find a file and fail.
+    with pytest.raises(ModuleNotFoundError):
+        # if this does *not* raise a ModuleNotFoundError, then we know it wasn't properly unloaded
+        import temprefmodule
 
 
 def test_plugins_have_unique_id(pm):
