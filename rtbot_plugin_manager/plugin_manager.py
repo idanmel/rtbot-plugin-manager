@@ -8,7 +8,27 @@ class PluginLoadingError(Exception):
 class PluginRepository(dict):
     pass
 
-find_class_name = re.compile(r'''class\s+([^(:]+)''')
+re_class_name = re.compile(r'''class\s+([^(:]+)''')
+re_class_father = re.compile(r'''class\s+[^(:]+\(([^)]+)''')
+
+
+def parse_classes(text):
+    """
+
+    :param text: a string that represents a module
+    :return: a string that represents a class
+    """
+    a_class = list()
+    for line in text.splitlines():
+        if line.startswith("class "):
+            if a_class:
+                yield '\n'.join(a_class)
+                a_class = list()
+            a_class.append(line)
+        if a_class and line.startswith(" "):
+            a_class.append(line)
+    if a_class:
+        yield '\n'.join(a_class)
 
 
 class PluginManager:
@@ -19,18 +39,28 @@ class PluginManager:
                                should be instantiated as the module's plugin.
         """
         self._repository = PluginRepository()
+        self.class_selector = class_selector
 
     @property
     def repository(self):
         return self._repository
 
-    def load_plugin_from_string(self, code_module):
-        plugin_id = find_class_name.search(code_module).group(1)
-        my_module = imp.new_module('mymodule')
-        exec(code_module, my_module.__dict__)
-        self._repository[plugin_id] = my_module.__dict__[plugin_id]()
-        return plugin_id
-
+    def load_plugin_from_string(self, module_code):
+        for class_code in parse_classes(module_code):
+            if self.class_selector:
+                match = re_class_father.search(class_code)
+                if match:
+                    if self.class_selector != match.group(1):
+                        continue
+                else:
+                    continue
+            if self.class_selector:
+                class_code = class_code.replace(self.class_selector, '')
+            plugin_id = re_class_name.search(class_code).group(1)
+            my_module = imp.new_module('mymodule')
+            exec(class_code, my_module.__dict__)
+            self._repository[plugin_id] = my_module.__dict__[plugin_id]()
+            return plugin_id
 
     def load_plugin_from_file(self, filename):
         with open(filename, 'r') as f:

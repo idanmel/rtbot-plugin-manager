@@ -23,7 +23,7 @@ def pm():
 
 @pytest.fixture
 def pm_with_class_selector():
-    yield PluginManager(class_selector=lambda cls: issubclass(cls, PluginBase) and not cls == PluginBase)
+    yield PluginManager(class_selector="PluginBase")
 
 
 PLUGIN = """
@@ -144,7 +144,7 @@ def test_plugin_loading_by_class_selector(pm_with_class_selector):
     plugin = pm_with_class_selector.repository[plugin_id]
 
     assert plugin.__class__.__name__ == 'PluginWithBaseClass'
-    assert plugin.bar == 'bar'
+    assert plugin.foo() == 'plugin with base class'
 
 
 def test_load_and_unload_plugin(pm):
