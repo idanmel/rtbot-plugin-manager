@@ -1,12 +1,14 @@
 import re
 import imp
 
+
 class PluginLoadingError(Exception):
     pass
 
 
 class PluginRepository(dict):
     pass
+
 
 re_class_name = re.compile(r'''class\s+([^(:]+)''')
 re_class_father = re.compile(r'''class\s+[^(:]+\(([^)]+)''')
@@ -59,7 +61,10 @@ class PluginManager:
             plugin_id = re_class_name.search(class_code).group(1)
             my_module = imp.new_module('mymodule')
             exec(class_code, my_module.__dict__)
-            self._repository[plugin_id] = my_module.__dict__[plugin_id]()
+            try:
+                self._repository[plugin_id] = my_module.__dict__[plugin_id]()
+            except Exception as e:
+                raise PluginLoadingError from e
             return plugin_id
 
     def load_plugin_from_file(self, filename):
